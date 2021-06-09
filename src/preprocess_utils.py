@@ -9,16 +9,17 @@ from pydub import AudioSegment
 from pydub.utils import make_chunks
 from tqdm import tqdm
 
+
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))[:-4] # [-4] is done to remove /src
 AUDIODATA_DIR = os.path.join(ROOT_PATH,'audiodata')
 RESULT_DIR = os.path.join(ROOT_PATH, 'result')
-MEL_DIR = os.path.join(ROOT_PATH, 'melresults')
+MEL_DIR = os.path.join(ROOT_PATH, 'melresult')
 PITCH_DIR = os.path.join(ROOT_PATH, 'pitch_change')
 TIME_DIR = os.path.join(ROOT_PATH, 'time_change')
 
 ##########################################################
-# Helper function
-def make_dir_if_absent(dir: str):
+# Helper functions
+def make_dir_if_absent(dir: str):      # makes directory if absent
     if not os.path.isdir(dir) and not os.path.exists(dir) :
         os.mkdir(dir)
         
@@ -30,15 +31,41 @@ def get_obj_from_dir(path: str):       # load pickle from directory
     
 ######################################################## 
 # Getting audio filenames
-def get_filename(filepath):         # returns last directory of filepath
+def get_filename(filepath):
+    """[returns last directory of filepath]
+
+    Args:
+        filepath ([str]): [path to be returned]
+
+    Returns:
+        [string]: [last directory of the path]
+    """
     return os.path.split(filepath)[-1]
     
-def mp3_filename(filepath):         # returns mp3 filename by removing .mp3
+def mp3_filename(filepath):
+    """[returns mp3 filename by removing .mp3]
+
+    Args:
+        filepath ([string]): [path of audio]
+
+    Returns:
+        [string]: [audio filename]
+    """
     return get_filename(filepath)[:-4]
 
 ########################################################
 
-def get_audio_chunks(filepath, chunk_duration=5_000): # Helper functions for Chunking Audios
+def get_audio_chunks(filepath, chunk_duration=5_000): 
+    """[helper function for getting audio chunks]
+
+    Args:
+        filepath ([string]): [filepath of audio to make chunks]
+        chunk_duration ([int], optional): [chunk duration]. Defaults to 5_000.
+
+    Returns:
+        [list]: [chunks of specific duration]
+    """
+    
     if (librosa.get_duration(filename = filepath) % 5 == 0):
         audio = AudioSegment.from_file(filepath,"wav") 
         chunks = make_chunks(audio, chunk_duration) 
@@ -50,15 +77,29 @@ def get_audio_chunks(filepath, chunk_duration=5_000): # Helper functions for Chu
         chunks = make_chunks(audio, chunk_duration)
         return chunks
             
-def save_chunks(chunks, filepath, filename): # Helper functions for Chunking Audios
+def save_chunks(chunks, filepath, filename):
+    """[Helper functions for exporting/saving the chunks]
+
+    Args:
+        chunks ([list]): [chunks of specific duration]
+        filepath ([string]): [path for taking audio-files for saving chunks ]
+        filename ([string]): [filename for chunks]
+    """
     make_dir_if_absent(filepath)
     for i, chunk in enumerate(chunks):
         chunk_path = os.path.join(filepath , f'{filename}-{i}.mp3')
         chunk.export(chunk_path, format="mp3")  
+        
+#######################################################################
 
-def chunk_audiodata(audiodata_filepath, result_filepath): # Making Chunks in folder
-    
-    make_dir_if_absent(RESULT_DIR) # making di if absent
+def chunk_audiodata(audiodata_filepath, result_filepath):
+    """[Chunking audiodata_folder in result_folder ]
+
+    Args:
+        audiodata_filepath ([string]): [Main Audio-Data path]
+        result_filepath ([string]): [Path for saving the chunks to specified folder]
+    """
+    make_dir_if_absent(RESULT_DIR) # making dir if absent
 
     for species in os.listdir(audiodata_filepath):
         species_dir = os.path.join(audiodata_filepath, species)
@@ -71,12 +112,15 @@ def chunk_audiodata(audiodata_filepath, result_filepath): # Making Chunks in fol
                 
                 save_chunks(chunks, os.path.join(result_filepath, species), mp3_filename(audio_filepath))
                 #saving chunks with chunks and filepath
-
-# ==> function_call[chunk_audiodata(AUDIODATA_DIR, RESULT_DIR)]
+                
 ########################################################################
-# Making meta.csv for a folder
 
 def make_csv(filepath):
+    """[Making meta.csv for a folder]
+
+    Args:
+        filepath ([string]): [Path for folder to make metadata]
+    """
     
     file = []
     for folders in tqdm(os.listdir(filepath)):
@@ -87,26 +131,83 @@ def make_csv(filepath):
             for inside_folders in tqdm(os.listdir(folders_dir)):
                 inside_folders_dir = os.path.join(folders_dir, inside_folders)
                 
+                # dict = {'Filename': inside_folders, 'Class_Label': folders}
                 file.append([inside_folders, folders])
 
     df = pd.DataFrame(file)
+    # if(flag == 0):
+    df.columns = ['Filename', 'Class_Label']
+    # else:
     df.to_csv(f'{filepath}/meta.csv')
-
-# ==> function_call[make_csv(PITCH_DIR)]    
+ 
 #######################################################################################
-# Loading Audio
 
 def load_audio(filepath):
+    """[Loading Audio]]
+
+    Args:
+        filepath ([string]): [Path for reading audios]
+
+    Returns:
+        [nd.array, int]: [returns audio_data & sampling_rate]
+    """
     y, sr = librosa.load(filepath)
     return y, sr
 
 #######################################################################################
-# Change pitch and dump pickle
+
+def normal_feature_extract(filepath, df):
+    """[Normal chunks feature extraction]
+
+    Args:
+        filepath ([string]]): [path of normal chunks for feature extraction]
+        df ([type]): [dataFrame holding meta.csv of normal chunks]
+    """
+    i = 0 # iterable variable
+    for index_num,row in (df.iterrows()):
+        l=[]
+        file_path = os.path.join(os.path.abspath(filepath)+"/"+str(row["Class_Label"])+"/"+str(row["Filename"]))
+        y, sr = load_audio(file_path)
+        l.append(librosa.feature.mfcc(y, sr=sr))
+        df.iloc[i,3] = l # storing MFCC values
+        
+        mel=librosa.power_to_db(librosa.feature.melspectrogram(y,sr=sr))
+        librosa.display.specshow(mel, sr=22050, x_axis="time", y_axis="mel") # plotting mel-spectogram
+        
+        mel_name = str(row['Filename'])[:-4] # removing .mp3 extension
+        df.iloc[i, 2] = mel_name + ".jpg" # making meta csv of images
+        i=i+1
+        
+        save_object_in_dir(df, f'{MEL_DIR}/mfcc_meta.p')
+        
+        save_mel_filepath = os.path.join(os.path.abspath(ROOT_PATH)+ "/" + "melresult")
+        
+        if row['Class_Label'] not in os.listdir(save_mel_filepath):
+            os.chdir(save_mel_filepath)
+            os.mkdir(str(row['Class_Label']))
+            os.chdir((save_mel_filepath)+os.sep+row['Class_Label'])
+            plt.savefig(mel_name+".jpg")
+        else:
+            plt.savefig(mel_name+".jpg")
+            
+####################################################################################
 
 def change_pitch(data, sampling_rate, pitch_factor):
+    """[Changes pitch]
+
+    Args:
+        data ([nd.array]): [audio_data of audio_chunks]
+        sampling_rate ([int]): [sampling rate of audio_chunks]
+        pitch_factor ([int]): [pitch factor]
+
+    Returns:
+        [nd.array]: [pitch changed audio values]
+    """
     return librosa.effects.pitch_shift(data, sampling_rate, pitch_factor)
 
 def pitch_manipulation():
+    """[Changing Pitch and then dumping pickle file in pitch_change directory]
+    """
     for chunk_species in tqdm(os.listdir(RESULT_DIR)):
         chunk_species_dir = os.path.join(RESULT_DIR, chunk_species)
         df = pd.DataFrame() 
@@ -117,17 +218,26 @@ def pitch_manipulation():
             
                 y, sr = load_audio(audio_filepath)
                 data = change_pitch(y, sr, 3)
-                dict = {'data': data, 'filename': audio_file, 'class': chunk_species}
-                print(dict)
+                dict = {'Data': data, 'Filename': audio_file, 'Class_Label': chunk_species}
                 df = df.append(dict, ignore_index=True)
+                print(df)
                     
-        save_object_in_dir(df, f'../pitch_change/{chunk_species}_pitch.p')
+        save_object_in_dir(df, f'../pitch_change/{chunk_species}_pitch.p') # saving pickle file of each species one by one
 
-# ==> function_call[pitch_manipulation()]
 #######################################################################################
-# Change time and dump pickle
 
 def shift_time(data, sampling_rate, shift_max, shift_direction):
+    """[Shifts Time]
+
+    Args:
+        data ([nd.array]): [audio_data]
+        sampling_rate ([int]): [sampling rate]
+        shift_max ([int]): [max_shift constant]
+        shift_direction ([string]): [direction('left' or 'right')]
+
+    Returns:
+        [nd.array]: [time shifted audio values]
+    """
     shift = np.random.randint(sampling_rate * shift_max)
     if shift_direction == 'right':
         shift = -shift
@@ -144,6 +254,8 @@ def shift_time(data, sampling_rate, shift_max, shift_direction):
     return augmented_data
 
 def time_manipulation():
+    """[Changing Time and then dumping pickle file in time_change directory]
+    """
     for chunk_species in tqdm(os.listdir(RESULT_DIR)):
         chunk_species_dir = os.path.join(RESULT_DIR, chunk_species)
         df = pd.DataFrame()     
@@ -154,67 +266,42 @@ def time_manipulation():
                 
                 y, sr = load_audio(audio_filepath)
                 data = shift_time(y, sr, 1, 'right')
-                print("called")
                 dict = {'Data': data, 'Filename': audio_file, 'Class_Label': chunk_species}
                 df = df.append(dict, ignore_index=True)
             
-        save_object_in_dir(df, f'../time_change/{chunk_species}_time.p')
-        
-# ==> function_call [time_manipulation()]       
+        save_object_in_dir(df, f'../time_change/{chunk_species}_time.p') # # saving pickle file of each species one by one    
+
 #######################################################################################
-# Combining Pitch pickle files and Time Pickle files
 
 def combine_pickle(filepath):
+    """[Combining Pitch pickle files and Time Pickle files]
+
+    Args:
+        filepath ([string]]): [folder path to combine the pickle files of each species]
+
+    Returns:
+        [DataFrame]: [combined dataFrame of pitch augmentation of all species ]
+    """
     data = pd.DataFrame()
     
     for pickle_files in tqdm(os.listdir(filepath)):
         pickle_dir = os.path.join(filepath, pickle_files)
         
         df = get_obj_from_dir(pickle_dir)
-        data = data.append(df)
+        print(df)
+        data.append(df)
     return data
 
-# ==> function_call [combine_pickle(PITCH_DIR)] 
-     
-#######################################################################################
-# Chunk feature extraction
+####################################################################################
 
-def normal_feature_extract(filepath, df):
+def aug_feature_extract(df, basis):
+    """[Augmented_chunks feature extraction]
 
-    i = 0
-    
-    for index_num,row in (df.iterrows()):
-        l=[]
-        filepath=os.path.join(os.path.abspath(path)+"/"+str(row["Class_Label"])+"/"+str(row["Filename"]))
-        y, sr = load_audio(filepath)
-        l.append(librosa.feature.mfcc(y, sr=sr))
-        df.iloc[i,3] = l
-        
-        mel=librosa.power_to_db(librosa.feature.melspectrogram(y,sr=sr))
-        librosa.display.specshow(mel, sr=22050, x_axis="time", y_axis="mel")
-        
-        mel_name = str(row['Filename'])[:-4]
-        df.iloc[i, 2] = mel_name + ".jpg"
-        i=i+1
-        
-        save_mel_filepath = os.path.join(os.path.abspath(ROOT_PATH)+ "/" + "melresult")
-        
-        if row['Class_Label'] not in os.listdir(save_mel_filepath):
-            os.chdir(save_mel_filepath)
-            os.mkdir(str(row['Class_Label']))
-            os.chdir((save_mel_filepath)+os.sep+row['Class_Label'])
-            plt.savefig(mel_name+".jpg")
-        else:
-            plt.savefig(mel_name+".jpg")
-
-# ==> function_call [feature_extraction(RESULT_DIR, data, i)]
-########################################################################
-# Augmentation Feature Extraction
-
-def aug_feature_extract(aug_data):
-    
+    Args:
+        df ([dataFrame]): [dataFrame holding combined species derived from pickle file]
+        basis ([string]): [on which basis the feature extraction is done, pitch or time]
+    """
     i=0
-    
     for index_num,row in (df.iterrows()):
         l=[]
         audio=df.iloc[i,1]
@@ -225,8 +312,8 @@ def aug_feature_extract(aug_data):
         mel=librosa.power_to_db(librosa.feature.melspectrogram(audio, sr=sr))
         librosa.display.specshow(mel, sr=22050, x_axis="time", y_axis="mel")
        
-        mel_name=str(row['Filename'])[:-4]
-        df.iloc[i,3]=mel_name + "pitch"+".jpg"
+        mel_name=str(row['Filename'])[:-4] # removing .mp3 extension
+        df.iloc[i,3]= mel_name + basis +".jpg"
         i=i+1
         
         save_mel_filepath = os.path.join(os.path.abspath(ROOT_PATH)+ "/" + "melresult")
@@ -236,6 +323,4 @@ def aug_feature_extract(aug_data):
             os.chdir((save_mel_filepath)+os.sep+row['Class_Label'])
             plt.savefig(mel_name+".jpg")
     
-## ==> function_call [aug_feature_extraction(aug_data)] 
-#######################################################################################  
-    
+#######################################################################################
