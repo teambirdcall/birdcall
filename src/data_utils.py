@@ -12,7 +12,7 @@ PITCH_DIR = os.path.join(ROOT_PATH, 'pitch_change') #augmented chunk=pitch
 TIME_DIR = os.path.join(ROOT_PATH, 'time_change')# augmented chunks=time
 
 meta=pd.read_csv(os.path.join(os.path.abspath(MEL_DIR)+"/"+"mel_meta.csv"))
-def mel_read(meta):
+def mel_read(X,Y):
     X=[]
     Y=[]
     for index_num,row in (meta.iterrows()):
@@ -48,7 +48,7 @@ def preprocessing_out_in(y_train,y_test,y_validation,X_train):
     X_train = X_train.reshape((-1,X.shape[1],X.shape[2],X.shape[3]))
     return y_train,y_validation,y_test,X_train
 
-read_image=mel_read(meta) 
+read_image=mel_read(meta['Image_Name'],meta['Class_Label']) 
 Y=pd.DataFrame(Y)
 Y.columns=['Class_Label']  
 Y=encode(Y)
