@@ -8,20 +8,20 @@ class build_CNN:
     def __init__(self,X_train,y_train,X_test,y_test,lr,epoch,filters,
                  kernel,user_layers,inp):
         
-        self.model=None
-        self.X_train=X_train
-        self.y_train=y_train
-        self.X_test=X_test
-        self.y_test=y_test
-        self.lr=lr
-        self.epoch=epoch
-        self.filters=filters
-        self.kernel=kernel
-        self.optimiser=None
-        self.evaluate_model=None
-        self.user_layers=user_layers
-        self.inp=inp
-        self.f=None
+        self.model = None
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+        self.lr = lr
+        self.epoch = epoch
+        self.filters = filters
+        self.kernel = kernel
+        self.optimiser = None
+        self.evaluate_model = None
+        self.user_layers = user_layers
+        self.inp = inp
+        self.f = None
         
     def model_CNN(self):
         self.f=0
