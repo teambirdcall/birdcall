@@ -168,12 +168,12 @@ def make_melspec():
 
 #######################################################################################
 
-# def get_melpath(mel_name, class_label):
-#     return os.path.join(MEL_DIR, class_label)
+def get_melpath(mel_name, class_label):
+    make_dir_if_absent(f'{MEL_DIR}/{class_label}')
+    return os.path.join(MEL_DIR, class_label, f'{mel_name}.jpg')
 
 def normal_feature_extract(filepath, df):
     """[Normal chunks feature extraction]
-
     Args:
         filepath ([string]]): [path of normal chunks for feature extraction]
         df ([type]): [dataFrame holding meta.csv of normal chunks]
@@ -182,31 +182,22 @@ def normal_feature_extract(filepath, df):
     for index_num,row in (df.iterrows()):
         l=[]
         
-        file_path = os.path.join(os.path.abspath(filepath)+"/"+str(row["Class_Label"])+"/"+str(row["Filename"]))
-        
+        file_path = os.path.join(os.path.abspath(filepath)+ "/" + str(row["Class_Label"])+ "/"+ str(row["Filename"]))
         y, sr = load_audio(file_path)
         l.append(librosa.feature.mfcc(y, sr= sr))
-        df.iloc[i,3] = l # storing MFCC values
+        df.iloc[i, 4] = l # storing MFCC values
         
-        mel=librosa.power_to_db(librosa.feature.melspectrogram(y, sr= sr))
-        librosa.display.specshow(mel, sr=22050, x_axis= "time", y_axis= "mel") # plotting mel-spectogram
+        mel= librosa.power_to_db(librosa.feature.melspectrogram(y, sr= sr))
+        df.iloc[i, 3] = mel
+        librosa.display.specshow(mel, sr= 22050, x_axis= "time", y_axis= "mel") # plotting mel-spectogram
         
-        mel_name = str(row['Filename'])[:-4] # removing .mp3 extension
+        mel_name = str(row["Filename"])[:-4] # removing .mp3 extension
         df.iloc[i, 2] = mel_name + ".jpg" # making meta csv of images
-        i=i+1
+        i = i+1
         
         save_object_in_dir(df, f'{MFCC_DIR}/mfcc_meta.p')
+        plt.savefig(f'{get_melpath(mel_name, row["Class_Label"])}')
         
-        # make_dir_if_absent(str(row['Class_Label']))
-        # plt.savefig(get_melpath(row['Class_Label'])+ f'{mel_name}.jpg')
-        
-        if row['Class_Label'] not in os.listdir(MEL_DIR):
-            os.chdir(MEL_DIR)
-            os.mkdir(str(row['Class_Label']))
-            os.chdir((MEL_DIR)+ os.sep+ row['Class_Label'])
-            plt.savefig(mel_name+".jpg")
-        else:
-            plt.savefig(mel_name+ ".jpg")
 ####################################################################################
 
 def change_pitch(data, sampling_rate, pitch_factor):
@@ -235,7 +226,7 @@ def pitch_manipulation():
             
                 y, sr = load_audio(audio_filepath)
                 data = change_pitch(y, sr, 3)
-                dict = {'Class_Label': chunk_species, 'Data': data, 'Filename': audio_file}
+                dict = {"Class_Label": chunk_species, "Data": data, "Filename": audio_file}
                 df = df.append(dict, ignore_index= True)
                     
         save_object_in_dir(df, f'../pitch_change/{chunk_species}_pitch.p') # saving pickle file of each species one by one
@@ -281,8 +272,8 @@ def time_manipulation():
                 audio_filepath = os.path.join(chunk_species_dir, audio_file)
                 
                 y, sr = load_audio(audio_filepath)
-                data = shift_time(y, sr, 1, 'right')
-                dict = {'Data': data, 'Filename': audio_file, 'Class_Label': chunk_species}
+                data = shift_time(y, sr, 1, "right")
+                dict = {"Data": data, "Filename": audio_file, "Class_Label": chunk_species}
                 df = df.append(dict, ignore_index=True)
             
         save_object_in_dir(df, f'../time_change/{chunk_species}_time.p') # # saving pickle file of each species one by one    
@@ -311,11 +302,11 @@ def combine_pickle(filepath):
 ####################################################################################
 
 def get_aug_melpath(mel_name, basis, class_label):
+    make_dir_if_absent(f'{MEL_DIR}/{class_label}')
     return os.path.join(MEL_DIR, class_label, f'{mel_name}-{basis}.jpg')
     
 def aug_feature_extract(df, basis):
     """[Augmented_chunks feature extraction]
-
     Args:
         df ([dataFrame]): [dataFrame holding combined species derived from pickle file]
         basis ([string]): [on which basis the feature extraction is done, pitch or time]
@@ -323,22 +314,20 @@ def aug_feature_extract(df, basis):
     i=0
     for index_num,row in (df.iterrows()):
         l=[]
-        audio=df.iloc[i,1]
-        sr = 22050
-        l.append(librosa.feature.mfcc(audio, sr = sr))
-        df.iloc[i,4] = l
-        # generate mel spectrogram
-        mel=librosa.power_to_db(librosa.feature.melspectrogram(audio, sr=sr))
-        librosa.display.specshow(mel, sr=22050, x_axis="time", y_axis="mel")
-       
-        mel_name= str(row['Filename'])[:-4] # removing .mp3 extension
-        df.iloc[i,3]= mel_name + basis + ".jpg"
-        i=i+1
-        # save_mel_filepath = os.path.join(os.path.abspath(ROOT_PATH)+ "/" + "melresult")
         
-        # if row['Class_Label'] in os.listdir(save_mel_filepath):
-        #     os.chdir(save_mel_filepath)
-        #     os.chdir((save_mel_filepath)+os.sep+row['Class_Label'])
-        plt.savefig(get_aug_melpath(mel_name, basis, row['Class_Label']))
+        audio= df.iloc[i, 1]
+        l.append(librosa.feature.mfcc(audio, sr = 22050))
+        df.iloc[i, 5] = l
+
+        mel= librosa.power_to_db(librosa.feature.melspectrogram(audio, sr= 22050))
+        df.iloc[i, 4] = mel
+        librosa.display.specshow(mel, sr= 22050, x_axis= "time", y_axis= "mel")  # generate mel spectrogram
+
+        mel_name= str(row["Filename"])[:-4] # removing .mp3 extension
+        df.iloc[i, 3]= mel_name + basis + ".jpg"
+        i = i+1
+        
+        save_object_in_dir(df, f'{MFCC_DIR}/mfcc_{basis}_meta.p')
+        plt.savefig(f'{get_aug_melpath(mel_name, basis, row["Class_Label"])}')
         
 #######################################################################################
