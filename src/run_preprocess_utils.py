@@ -3,8 +3,7 @@ from preprocess_utils import *
 chunk_audiodata(AUDIODATA_DIR, RESULT_DIR) # chunking audios from main audio-data
 make_csv(RESULT_DIR) # making chunk_meta.csv for chunks
 
-pitch_manipulation() # saving pickle files in pitch_change
-time_manipulation() # saving pickle files in time_change
+data_augmentation(RESULT_DIR) # on tha basis of pitch and time
 
 ##########################################################################
 
