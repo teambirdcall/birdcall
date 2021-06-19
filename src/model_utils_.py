@@ -25,15 +25,15 @@ class BirdCall_CNN:
             stores input size of mel data:X
         Returns
         -------
-         CNN model 
+        CNN model 
         """
         f=0
         self.model=keras.Sequential()
         #----input layer--- 
         self.data['kernel size']=tuple(self.data['kernel size'])
         self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
-                                              self.data['kernel size'], 
-                                          activation='relu',input_shape=inp))
+                                        self.data['kernel size'], 
+                                        activation='relu',input_shape=inp))
         self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f],
                                                     self.data['kernel size'],
                                                     padding='same'))
@@ -44,8 +44,8 @@ class BirdCall_CNN:
         for i in range(self.data['number of layers'][0]-1):
             f=f+1
             self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
-                                                  self.data['kernel size'], 
-                                                  activation='relu'))
+                                                self.data['kernel size'], 
+                                                activation='relu'))
             self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f],
                                                         self.data['kernel size'],
                                                         padding='same'))
@@ -54,19 +54,19 @@ class BirdCall_CNN:
         #Flatten Out and feed it into Dense layer
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(self.data['filters'][f],
-                                             activation='relu'))
+                                            activation='relu'))
         self.model.add(tf.keras.layers.Dropout(0.30))
         
         #output layer
-        self.model.add(keras.layers.Dense(7, activation='softmax'))
+        self.model.add(keras.layers.Dense(2, activation='softmax'))
         return self.model
-           
+
     def compile_CNN(self):
         #compiles model using Adam optimiser
         optimiser = keras.optimizers.Adam(learning_rate=self.data['learning rate'][0])
         self.model.compile(optimizer=optimiser,
-                           loss='categorical_crossentropy',
-                           metrics=['accuracy'])
+                        loss='categorical_crossentropy',
+                        metrics=['accuracy'])
     def CNN_summary(self):
         #gives the model summary
         print(self.model.summary())
@@ -108,7 +108,6 @@ class BirdCall_CNN:
                 # save the model whenever accuracy > prev_accuracy
                 self.model.save("my_model")
                 print("Model saved at accuracy=",max_acc)
-   
     
     def evaluate_CNN(self,X_test,y_test):
         """

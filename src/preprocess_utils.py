@@ -184,10 +184,9 @@ def normal_feature_extract(filepath, df):
         file_path = os.path.join(os.path.abspath(filepath)+ "/" + str(row["Class_Label"])+ "/"+ str(row["Filename"]))
         y, sr = load_audio(file_path)
         l.append(librosa.feature.mfcc(y, sr= sr))
-        df.iloc[i, 4] = l # storing MFCC values
+        df.iloc[i, 3] = l # storing MFCC values
         
         mel= librosa.power_to_db(librosa.feature.melspectrogram(y, sr= sr))
-        # df.iloc[i, 3] = mel
         librosa.display.specshow(mel, sr= 22050, x_axis= "time", y_axis= "mel") # plotting mel-spectogram
         
         mel_name = str(row["Filename"])[:-4] # removing .mp3 extension
@@ -304,10 +303,9 @@ def aug_feature_extract(df, basis):
         
         audio= df.iloc[i, 1]
         l.append(librosa.feature.mfcc(audio, sr = 22050))
-        df.iloc[i, 5] = l  # storing mfcc
+        df.iloc[i, 4] = l  # storing mfcc
 
         mel= librosa.power_to_db(librosa.feature.melspectrogram(audio, sr= 22050))
-        df.iloc[i, 4] = mel
         librosa.display.specshow(mel, sr= 22050, x_axis= "time", y_axis= "mel")  # generate mel spectrogram
 
         mel_name= str(row["Filename"])[:-4] # removing .mp3 extension

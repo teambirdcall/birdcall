@@ -4,8 +4,9 @@ There are already many projects underway to extensively monitor birds by continu
 
 # Directory Structure
 
- - **[audiodata](https://github.com/teambirdcall/birdcall/tree/main/audiodata)** - Contains the raw Audio files categorised by their species name as folders. This folder should contain the original audios that have not been chunked and are of variable length. 
+ - **[audiodata](https://github.com/teambirdcall/birdcall/tree/main/audiodata)** - Contains the raw Audio files categorized by their species name as folders. This folder should contain the original audios that have not been chunked and are of variable length. 
  - **[result](https://github.com/teambirdcall/birdcall/tree/main/result)** - It contains the chunked audios as per respective species folder that have been made from audiodata folder.
- - **[melresult](https://github.com/teambirdcall/birdcall/tree/main/melresult)**- It contains the mel-spectograms of chunked audios as per respective species that have been made from result folder.
+ - **[melresult](https://github.com/teambirdcall/birdcall/tree/main/melresult)**- It contains the mel-spectrogram of chunked audios as per respective species that have been made from result folder.
  - **[pitch_change](https://github.com/teambirdcall/birdcall/tree/main/pitch_change)** - It contains the pickle files of each respective species that have changed on the basis of pitch and dumped in this folder.
  - **[time_change](https://github.com/teambirdcall/birdcall/tree/main/time_change)** - It contains the pickle files of each respective species that have changed on the basis of time and dumped in this folder.
+ - **[mfcc](https://github.com/teambirdcall/birdcall/tree/main/mfcc)** - It contains the mfcc-data in the form of pickle files of all the species in the result folder.
