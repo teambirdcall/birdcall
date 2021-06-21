@@ -11,7 +11,7 @@ class BirdCall_CNN:
         self.data=data
         self.model=None
         
-    def model_CNN(self,inp): 
+    def model_CNN(self, inp): 
         """
         Parameters
         ----------
@@ -30,13 +30,11 @@ class BirdCall_CNN:
         f=0
         self.model=keras.Sequential()
         #----input layer--- 
-        self.data['kernel size']=tuple(self.data['kernel size'])
-        self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
-                                        self.data['kernel size'], 
-                                        activation='relu',input_shape=inp))
-        self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f],
-                                                    self.data['kernel size'],
-                                                    padding='same'))
+        self.data['kernel size']= tuple(self.data['kernel size'])
+        self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f], self.data['kernel size'],activation='relu',input_shape=inp))
+        
+        self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f], self.data['kernel size'], padding='same'))
+        
         self.model.add(tf.keras.layers.Dropout(0.25))
         
         #----hidden layers---
