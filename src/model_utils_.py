@@ -33,9 +33,9 @@ class BirdCall_CNN:
         self.data['kernel size']= tuple(self.data['kernel size'])
         self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f], self.data['kernel size'],activation='relu',input_shape=inp))
         
-        self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f], self.data['kernel size'], padding='same'))
+        self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2))
         
-        self.model.add(tf.keras.layers.Dropout(0.25))
+        self.model.add(tf.keras.layers.Dropout(0.20))
         
         #----hidden layers---
         # used the loop for the extra hidden layers in CNN other than input,flatten,output
@@ -44,17 +44,13 @@ class BirdCall_CNN:
             self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
                                                 self.data['kernel size'], 
                                                 activation='relu'))
-            self.model.add(tf.keras.layers.MaxPooling2D(self.data['filters'][f],
-                                                        self.data['kernel size'],
-                                                        padding='same'))
-            self.model.add(tf.keras.layers.Dropout(0.25))
+            self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+            self.model.add(tf.keras.layers.Dropout(0.20))
             
         #Flatten Out and feed it into Dense layer
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(self.data['filters'][f],
                                             activation='relu'))
-        self.model.add(tf.keras.layers.Dropout(0.30))
-        
         #output layer
         self.model.add(keras.layers.Dense(2, activation='softmax'))
         return self.model
