@@ -11,7 +11,7 @@ class BirdCall_CNN:
         self.data=data
         self.model=None
         
-    def model_CNN(self, inp): 
+    def model_CNN(self,inp): 
         """
         Parameters
         ----------
@@ -25,42 +25,46 @@ class BirdCall_CNN:
             stores input size of mel data:X
         Returns
         -------
-        CNN model 
+         CNN model 
         """
         f=0
+        self.data['kernel size']=tuple(self.data['kernel size'])
         self.model=keras.Sequential()
         #----input layer--- 
-        self.data['kernel size']= tuple(self.data['kernel size'])
-        self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f], self.data['kernel size'],activation='relu',input_shape=inp))
         
-        self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2))
-        
+        self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
+                                              self.data['kernel size'], 
+                                          activation='relu',input_shape=inp))
+        self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2)))
         self.model.add(tf.keras.layers.Dropout(0.20))
-        
+        self.model.add(tf.keras.layers.BatchNormalization())
         #----hidden layers---
         # used the loop for the extra hidden layers in CNN other than input,flatten,output
         for i in range(self.data['number of layers'][0]-1):
             f=f+1
             self.model.add(tf.keras.layers.Conv2D(self.data['filters'][f],
-                                                self.data['kernel size'], 
-                                                activation='relu'))
-            self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+                                                  self.data['kernel size'], 
+                                                  activation='relu',padding='same'))
+            self.model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2)))
             self.model.add(tf.keras.layers.Dropout(0.20))
+            self.model.add(tf.keras.layers.BatchNormalization())
             
         #Flatten Out and feed it into Dense layer
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(self.data['filters'][f],
-                                            activation='relu'))
+                                             activation='relu'))
+   
         #output layer
-        self.model.add(keras.layers.Dense(2, activation='softmax'))
+        self.model.add(keras.layers.Dense(2, activation='softmax',
+                                          name='output_layer'))
         return self.model
-
+           
     def compile_CNN(self):
         #compiles model using Adam optimiser
-        optimiser = keras.optimizers.Adam(learning_rate=self.data['learning rate'][0])
+        optimiser = keras.optimizers.Adam(learning_rate=self.data['learning rate'][2])
         self.model.compile(optimizer=optimiser,
-                        loss='categorical_crossentropy',
-                        metrics=['accuracy'])
+                           loss='categorical_crossentropy',
+                           metrics=['acc'])
     def CNN_summary(self):
         #gives the model summary
         print(self.model.summary())
@@ -85,24 +89,44 @@ class BirdCall_CNN:
         saves the model if current_accuracy > prev_accuracy
         
         """
-        history = self.model.fit(X_train, y_train,epochs=self.data['epochs'][2])
+        history = self.model.fit(X_train, y_train,batch_size=32,
+                                 epochs=self.data['epochs'][0],
+                                 validation_data=(X_validation,y_validation))
+        
         loss_train = history.history['loss'] # gets the entire history of loss
-        accuracy_train=history.history['accuracy']# gets the entire history of accuracy
+        acc_train=history.history['acc']# gets the entire history of accuracy
+        loss_val=history.history['val_loss']#gets the entire history of validation loss
+        acc_val=history.history['val_acc'] #gets the entire history of validation accuracy
+        #summarize history for loss
         plt.plot(loss_train)
-        plt.title('Training loss')
+        plt.plot(loss_val)
+        plt.title('Model Loss')
+        plt.xlim([0,60])
+        plt.xticks(np.arange(0,60,10))
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
-        plt.legend()
+        plt.legend(['Train', 'Validation'], loc='upper right')
         plt.show()
         
-        max_acc =accuracy_train[0]
-        for value in accuracy_train:
+        #summarize history for accuracy
+        plt.plot(acc_train)
+        plt.plot(acc_val)
+        plt.title('Model Accuracy')
+        plt.xlim([0,60])
+        plt.xticks(np.arange(0,60,10))
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend(['Train', 'Validation'], loc='upper right')
+        plt.show()
+        
+        max_acc =acc_train[0]
+        for value in acc_train:
             if value > max_acc:
                 max_acc= value
                 # save the model whenever accuracy > prev_accuracy
                 self.model.save("my_model")
                 print("Model saved at accuracy=",max_acc)
-    
+           
     def evaluate_CNN(self,X_test,y_test):
         """
         Parameters
@@ -120,5 +144,6 @@ class BirdCall_CNN:
 
         """
         evaluate_model=self.model.evaluate(X_test,y_test)
-        print("Test Data evaluation:",evaluate_model)
+        print("Test Data evaluation - Loss and accuracy ",evaluate_model)
         
+
