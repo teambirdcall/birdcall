@@ -5,11 +5,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))[:-4] #root folder
-AUDIODATA_DIR = os.path.join(ROOT_PATH,'audiodata')#sacred data folder
-RESULT_DIR = os.path.join(ROOT_PATH, 'result') #chunks audio- present here
 MEL_DIR = os.path.join(ROOT_PATH, 'melresult')#mel spectrograms normal chunked
-PITCH_DIR = os.path.join(ROOT_PATH, 'pitch_change') #augmented chunk=pitch
-TIME_DIR = os.path.join(ROOT_PATH, 'time_change')# augmented chunks=time
 
 meta=pd.read_csv(os.path.join(os.path.abspath(MEL_DIR)+"/"+"meta.csv"))
 
